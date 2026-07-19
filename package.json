@@ -1,0 +1,20 @@
+{
+  "name": "lol-historico",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de análise de partidas de League of Legends (estilo gol.gg)",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

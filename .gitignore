@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+.DS_Store
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Replays .rofl importados (dados do usuário)
+server/src/data/replays/
+
+# Vercel
+.vercel/
+
+# Config local do agente
+.claude/
+.claudeignore

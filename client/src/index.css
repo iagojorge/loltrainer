@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-bg text-gray-200 font-sans antialiased;
+    background-image:
+      radial-gradient(900px 500px at 15% -10%, rgba(176, 38, 255, 0.10), transparent 60%),
+      radial-gradient(700px 400px at 100% 0%, rgba(124, 58, 237, 0.08), transparent 55%);
+    background-attachment: fixed;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #08060d;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a1f45;
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #b026ff;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-bg-card border border-line rounded-xl;
+  }
+  .card-hover {
+    @apply transition-colors hover:bg-bg-hover hover:border-brand cursor-pointer;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors;
+  }
+  .btn-primary {
+    @apply btn bg-brand hover:bg-brand-glow text-white shadow-neon;
+  }
+  .btn-ghost {
+    @apply btn bg-bg-soft border border-line hover:bg-bg-hover hover:border-brand text-gray-300;
+  }
+  .input {
+    @apply bg-bg-soft border border-line rounded-lg px-3 py-1.5 text-sm text-gray-200 outline-none focus:border-brand;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+  .text-glow {
+    text-shadow: 0 0 18px rgba(176, 38, 255, 0.55);
+  }
+}
