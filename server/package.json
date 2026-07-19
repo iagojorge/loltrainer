@@ -6,7 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --disable-warning=ExperimentalWarning --env-file-if-exists=../.env --watch src/index.js",
-    "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=../.env src/index.js"
+    "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=../.env src/index.js",
+    "build": "echo \"(server nao precisa de build)\""
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
