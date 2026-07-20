@@ -3,6 +3,20 @@ import axios from 'axios';
 // withCredentials envia o cookie de sessão (httpOnly) nas requisições.
 const api = axios.create({ baseURL: '/api', withCredentials: true });
 
+// Chave da Riot informada pelo usuário (expira a cada 24h) — guardada só no
+// navegador e enviada por header quando presente. Nunca fica no servidor.
+const RIOT_KEY_STORAGE = 'riotApiKey';
+export const getStoredRiotKey = () => localStorage.getItem(RIOT_KEY_STORAGE) || '';
+export const setStoredRiotKey = (k) => {
+  if (k && k.trim()) localStorage.setItem(RIOT_KEY_STORAGE, k.trim());
+  else localStorage.removeItem(RIOT_KEY_STORAGE);
+};
+api.interceptors.request.use((cfg) => {
+  const k = getStoredRiotKey();
+  if (k) cfg.headers['X-Riot-Api-Key'] = k;
+  return cfg;
+});
+
 // ---- Autenticação ----
 export const register = (payload) => api.post('/auth/register', payload).then((r) => r.data);
 export const login = (payload) => api.post('/auth/login', payload).then((r) => r.data);

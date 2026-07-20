@@ -23,14 +23,13 @@ const nav = [
 
 function Header() {
   const { user, logout } = useAuth();
-  const teamName = user?.teamName || 'Meu Time';
-  const [first, ...rest] = teamName.split(' ');
+  const teamName = user?.teamName || '';
   return (
     <header className="sticky top-0 z-30 bg-bg-soft/95 backdrop-blur border-b border-brand/20">
       <div className="max-w-[1400px] mx-auto px-4 flex items-center gap-6 h-14">
         <Link to="/" className="flex items-center gap-2 font-extrabold text-lg shrink-0">
-          <span className="text-brand text-glow uppercase">{first}</span>
-          <span className="text-white">{rest.join(' ')}</span>
+          <span className="text-brand text-glow">TENEBRA</span>
+          <span className="text-white">{teamName}</span>
         </Link>
         <nav className="flex items-center gap-1 overflow-x-auto">
           {nav.map((n) => (

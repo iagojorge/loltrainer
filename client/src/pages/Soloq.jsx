@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getSoloq, getSoloqPlayer } from '../api.js';
+import { getSoloq, getSoloqPlayer, getStoredRiotKey, setStoredRiotKey } from '../api.js';
+import { useAuth } from '../auth.jsx';
 import { Card, SectionTitle, Spinner, WinRatePill, Modal, ResultBadge, RankBadge } from '../components/ui.jsx';
 import ChampIcon from '../components/ChampIcon.jsx';
 import { TrendLine } from '../components/charts.jsx';
@@ -7,50 +8,97 @@ import { ROLE_ICON } from '../lib/champ.js';
 import { shortDate, winRateColor, rankColor } from '../lib/format.js';
 
 export default function Soloq() {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sel, setSel] = useState(null);
+  const [hasKey, setHasKey] = useState(!!getStoredRiotKey());
 
   const load = (force) => {
+    if (!getStoredRiotKey()) return;
     setBusy(true);
     getSoloq(force ? { force: 1 } : {}).then(setData).finally(() => setBusy(false));
   };
-  useEffect(() => { load(false); }, []);
+  useEffect(() => { if (getStoredRiotKey()) load(false); }, []);
 
-  if (!data) return <Spinner label="Buscando SoloQ na Riot…" />;
+  const onKeySaved = () => { setHasKey(!!getStoredRiotKey()); load(true); };
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-white text-glow">SoloQ · Tenebra Leviathan</h1>
+          <h1 className="text-xl font-bold text-white text-glow">SoloQ · TENEBRA {user?.teamName || ''}</h1>
           <p className="text-sm text-gray-400">Ranqueada Solo/Duo dos jogadores — campeões mais jogados, win rate e histórico.</p>
         </div>
-        <button className="btn-ghost" disabled={busy} onClick={() => load(true)}>
+        <button className="btn-ghost" disabled={busy || !hasKey} onClick={() => load(true)}>
           {busy ? 'Atualizando…' : '↻ Atualizar'}
         </button>
       </div>
 
-      {!data.keyPresent && (
-        <Card className="border-loss/40">
-          <p className="text-sm text-loss font-medium">RIOT_API_KEY não configurada.</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Cole uma chave válida (developer.riotgames.com) no arquivo <code className="text-brand-glow">.env</code> da raiz
-            e reinicie o servidor. Chaves de desenvolvimento expiram a cada 24h.
-          </p>
+      <RiotKeyBar onSaved={onKeySaved} />
+
+      {busy && !data && <Spinner label="Buscando SoloQ na Riot…" />}
+      {!hasKey && !data && (
+        <Card className="text-center text-gray-500 text-sm py-8">
+          Cole a chave da Riot acima para carregar a SoloQ dos jogadores.
         </Card>
       )}
 
-      <EloLadder players={data.players} />
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {data.players.map((p) => (
-          <PlayerCard key={p.name} p={p} onOpen={() => p.ok && p.games > 0 && setSel(p.name)} />
-        ))}
-      </div>
+      {data && (
+        <>
+          <EloLadder players={data.players} />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.players.map((p) => (
+              <PlayerCard key={p.name} p={p} onOpen={() => p.ok && p.games > 0 && setSel(p.name)} />
+            ))}
+          </div>
+        </>
+      )}
 
       <PlayerModal name={sel} onClose={() => setSel(null)} />
     </div>
+  );
+}
+
+// Campo da chave da Riot (uso por vez). Guardada só no navegador (localStorage),
+// enviada por header; nunca fica no servidor. Expira a cada 24h.
+function RiotKeyBar({ onSaved }) {
+  const [key, setKey] = useState(getStoredRiotKey());
+  const [editing, setEditing] = useState(!getStoredRiotKey());
+  const saved = getStoredRiotKey();
+
+  const save = () => { setStoredRiotKey(key); setEditing(false); onSaved(); };
+  const clear = () => { setStoredRiotKey(''); setKey(''); setEditing(true); onSaved(); };
+
+  const mask = (k) => (k.length > 12 ? `${k.slice(0, 8)}…${k.slice(-4)}` : k);
+
+  return (
+    <Card className="border-brand/25">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <SectionTitle>Chave da Riot (Solo/Duo)</SectionTitle>
+        <a href="https://developer.riotgames.com" target="_blank" rel="noreferrer"
+          className="text-xs text-brand-glow hover:underline">obter chave ↗</a>
+      </div>
+      {!editing && saved ? (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-win">✓ chave ativa</span>
+          <code className="text-xs text-gray-400 bg-bg-soft px-2 py-1 rounded">{mask(saved)}</code>
+          <button className="btn-ghost !py-1 !px-2 text-xs" onClick={() => setEditing(true)}>trocar</button>
+          <button className="btn-ghost !py-1 !px-2 text-xs" onClick={clear}>remover</button>
+        </div>
+      ) : (
+        <div className="flex items-end gap-2 flex-wrap">
+          <label className="block grow min-w-[240px]">
+            <input className="input w-full mt-1 font-mono" placeholder="RGAPI-xxxxxxxx-..." value={key}
+              onChange={(e) => setKey(e.target.value)} />
+          </label>
+          <button className="btn-primary" disabled={!key.trim()} onClick={save}>Salvar e buscar</button>
+        </div>
+      )}
+      <p className="text-[11px] text-gray-600 mt-2">
+        A chave de desenvolvimento expira a cada 24h. Ela fica só no seu navegador — não é salva no servidor.
+      </p>
+    </Card>
   );
 }
 

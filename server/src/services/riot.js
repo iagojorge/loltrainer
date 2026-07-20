@@ -2,6 +2,7 @@ import { dbGet, dbAll, dbTx } from '../db.js';
 import { loadDDragonMeta } from './ddragon.js';
 import { listRoster, detectOurTeamId, rosterTagMap } from './roster.js';
 import { patchFromGameVersion } from './patch.js';
+import { getRiotKey } from './riotKey.js';
 
 const norm = (s) => String(s || '').trim().toLowerCase();
 // Canonicaliza um gameName para o nome exato do roster (case-insensitive).
@@ -86,7 +87,7 @@ async function riotFetch(url, key) {
  * endpoint de debug GET /api/riot/check e pelo Swagger.
  */
 export async function checkRiotKey(platform) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   const plat = (platform || process.env.RIOT_PLATFORM || 'br1').toLowerCase();
   const routing = ROUTING[plat] || 'americas';
   const diag = {
@@ -94,7 +95,7 @@ export async function checkRiotKey(platform) {
     keyPreview: maskKey(key),
     platform: plat,
     routing,
-    envLoadedAtStartup: !!process.env.RIOT_API_KEY,
+    envLoadedAtStartup: !!getRiotKey(),
   };
   if (!key) {
     return { ...diag, ok: false, hint: 'RIOT_API_KEY vazia em process.env. Confirme o .env na raiz e reinicie o servidor (o .env é lido só no boot).' };
@@ -149,7 +150,7 @@ function normalizeMatchId(input, platform) {
 
 /** Resolve um Riot ID (gameName#tagLine) no PUUID via account-v1. */
 export async function resolveRiotId(gameName, tagLine, platform) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   const routing = regionRouting(`${platform || ''}_0`, platform);
   const url = `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
   return riotFetch(url, key); // { puuid, gameName, tagLine }
@@ -161,21 +162,21 @@ export async function resolveRiotId(gameName, tagLine, platform) {
  * dos jogadores no momento do import e na SoloQ.
  */
 export async function fetchLeagueEntriesByPuuid(puuid, platform) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   const plat = String(platform || process.env.RIOT_PLATFORM || 'br1').toLowerCase();
   return riotFetch(`https://${plat}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`, key);
 }
 
 /** Busca uma partida completa (match-v5) por matchId. Usado pela SoloQ. */
 export async function fetchMatchById(matchId, platform) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   const routing = regionRouting(matchId, platform);
   return riotFetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchId}`, key);
 }
 
 /** Lista os matchIds recentes de um PUUID via match-v5 (by-puuid). */
 export async function fetchMatchIds(puuid, platform, { start = 0, count = 10, queue, type } = {}) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   const routing = regionRouting(`${platform || ''}_0`, platform);
   const qs = new URLSearchParams({ start: String(start), count: String(Math.min(100, count)) });
   if (queue) qs.set('queue', String(queue));
@@ -191,7 +192,7 @@ export async function fetchMatchIds(puuid, platform, { start = 0, count = 10, qu
  * @param {object} p { riotId:"Nome#TAG", platform, count }
  */
 export async function listMatchHistory(userId, { riotId, platform, count = 10 } = {}) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   if (!key) return { ok: false, reason: 'RIOT_API_KEY não configurada. Defina a chave no .env e reinicie o servidor.' };
   const [gameName, tagLine] = String(riotId || '').split('#');
   if (!gameName || !tagLine) {
@@ -256,7 +257,7 @@ async function summarizeMatch(userId, matchJson, ourPuuid) {
  * @param {object} opts { ourSide?, ourPuuid?, opponent?, series_type?, series_label?, platform? }
  */
 export async function importMatchById(userId, matchId, opts = {}) {
-  const key = process.env.RIOT_API_KEY;
+  const key = getRiotKey();
   if (!key) {
     return { ok: false, reason: 'RIOT_API_KEY não configurada. Defina a chave no arquivo .env e reinicie o servidor.' };
   }
@@ -313,7 +314,7 @@ export async function importMatchById(userId, matchId, opts = {}) {
 const isApiPuuid = (p) => typeof p === 'string' && p.length > 60;
 
 export async function refreshMatchRanks(userId, matchId, platform) {
-  if (!process.env.RIOT_API_KEY) {
+  if (!getRiotKey()) {
     return { ok: false, reason: 'RIOT_API_KEY não configurada.' };
   }
   // Garante que a partida é do usuário.
@@ -350,7 +351,7 @@ export async function refreshMatchRanks(userId, matchId, platform) {
 // Busca o elo Solo/Duo (por PUUID) de todos os participantes → Map(puuid → rank).
 async function fetchRanksForParticipants(participants, platform) {
   const map = new Map();
-  if (!process.env.RIOT_API_KEY) return map;
+  if (!getRiotKey()) return map;
   const { rankByPuuid } = await import('./rank.js');
   await Promise.all(participants.map(async (p) => {
     if (!p.puuid) return;

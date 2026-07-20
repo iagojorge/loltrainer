@@ -155,7 +155,8 @@ function buildItems(p, meta) {
 // O PUUID do .rofl é interno (UUID) e não serve para a API; resolvemos pelo Riot ID.
 async function fetchRoflRanks(stats, platform) {
   const map = new Map();
-  if (!process.env.RIOT_API_KEY) return map;
+  const { getRiotKey } = await import('./riotKey.js');
+  if (!getRiotKey()) return map;
   const { rankAndPuuidByRiotId } = await import('./rank.js');
   await Promise.all((stats || []).map(async (p) => {
     const name = norm(p.RIOT_ID_GAME_NAME || p.NAME);

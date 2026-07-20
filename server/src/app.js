@@ -8,6 +8,7 @@ import { initSchema, dbGet, dbRun } from './db.js';
 import { hashPassword } from './services/auth.js';
 import { seedFixedRoster } from './services/roster.js';
 import { authRequired } from './middleware/authRequired.js';
+import { riotKeyContext } from './services/riotKey.js';
 import authRouter from './routes/auth.js';
 import matchesRouter from './routes/matches.js';
 import championsRouter from './routes/champions.js';
@@ -34,7 +35,7 @@ async function ensureLeviathan() {
   let id = existing?.id;
   if (!id) {
     const r = await dbRun('INSERT INTO users (username, password_hash, team_name) VALUES (?, ?, ?)',
-      ['leviathan', hashPassword('lev@2026'), 'Tenebra Leviathan']);
+      ['leviathan', hashPassword('lev@2026'), 'Leviathan']);
     id = r.lastInsertRowid;
   }
   await seedFixedRoster(id);
@@ -43,6 +44,7 @@ async function ensureLeviathan() {
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
+app.use(riotKeyContext); // captura X-Riot-Api-Key (chave por requisição)
 // express.json em tudo, EXCETO os endpoints de .rofl (corpo binário cru).
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/matches/rofl/')) return next();

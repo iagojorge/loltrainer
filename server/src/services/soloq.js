@@ -2,6 +2,7 @@ import { listRoster, setPlayerPuuid } from './roster.js';
 import { resolveRiotId, fetchMatchIds, fetchMatchById } from './riot.js';
 import { rankByPuuid, ladderScore, formatRank } from './rank.js';
 import { recordSnapshot, getSnapshots } from './snapshots.js';
+import { getRiotKey } from './riotKey.js';
 import { loadDDragonMeta } from './ddragon.js';
 import { championIcon } from '../data/champions.js';
 import { TEAM_PLATFORM } from '../data/roster.js';
@@ -123,8 +124,8 @@ async function fetchPlayer(userId, player, count) {
 
 /** SoloQ detalhada de um jogador do roster (por nome canônico). */
 export async function soloqForPlayer(userId, name, { count = 20, force = false } = {}) {
-  if (!process.env.RIOT_API_KEY) {
-    return { ok: false, reason: 'RIOT_API_KEY não configurada. Defina a chave no .env e reinicie o servidor.' };
+  if (!getRiotKey()) {
+    return { ok: false, reason: 'Informe a chave da Riot no campo acima (ela expira a cada 24h).' };
   }
   const player = (await listRoster(userId)).find((p) => p.name.toLowerCase() === String(name || '').toLowerCase());
   if (!player) return { ok: false, reason: 'Jogador não encontrado no roster.' };
@@ -160,5 +161,5 @@ export async function soloqOverview(userId, { count = 12, force = false } = {}) 
       recent: (data.history || []).slice(0, 8).map((g) => ({ win: g.win, champion: g.champion, icon: g.icon, matchId: g.matchId })),
     });
   }
-  return { ok: true, keyPresent: !!process.env.RIOT_API_KEY, platform: TEAM_PLATFORM, players };
+  return { ok: true, keyPresent: !!getRiotKey(), platform: TEAM_PLATFORM, players };
 }

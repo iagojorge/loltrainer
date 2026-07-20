@@ -210,6 +210,15 @@ export async function initSchema() {
       UNIQUE (user_id, name)
     );
 
+    CREATE TABLE IF NOT EXISTS invite_tokens (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      token       TEXT NOT NULL UNIQUE,
+      used        INTEGER NOT NULL DEFAULT 0,
+      used_by     INTEGER,
+      used_at     TEXT,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS rank_snapshots (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id     INTEGER NOT NULL,

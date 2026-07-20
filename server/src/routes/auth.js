@@ -13,8 +13,8 @@ const cookieOpts = {
 };
 
 router.post('/register', async (req, res) => {
-  const { username, password, teamName } = req.body || {};
-  const result = await registerUser({ username, password, teamName });
+  const { username, password, teamName, inviteToken } = req.body || {};
+  const result = await registerUser({ username, password, teamName, inviteToken });
   if (!result.ok) return res.status(400).json(result);
   // Time novo começa com roster vazio — o usuário adiciona seus jogadores.
   res.cookie('token', result.token, cookieOpts);
